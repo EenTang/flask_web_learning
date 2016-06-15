@@ -6,8 +6,9 @@ from markdown import markdown
 import bleach
 from flask import current_app, request, url_for
 from flask.ext.login import UserMixin, AnonymousUserMixin
-from app.exceptions import ValidationError
 from . import db, login_manager
+from app.exceptions import ValidationError
+
 
 
 class Permission:
@@ -239,32 +240,35 @@ class User(UserMixin, db.Model):
         return Post.query.join(Follow, Follow.followed_id == Post.author_id)\
             .filter(Follow.follower_id == self.id)
 
+    #Convert a user to a JSON serializable dictionary
     def to_json(self):
         json_user = {
-            'url': url_for('api.get_user', id=self.id, _external=True),
-            'username': self.username,
-            'member_since': self.member_since,
-            'last_seen': self.last_seen,
-            'posts': url_for('api.get_user_posts', id=self.id, _external=True),
-            'followed_posts': url_for('api.get_user_followed_posts',
-                                      id=self.id, _external=True),
-            'post_count': self.posts.count()
+            'url' : url_for('api.get_user', id=self.id, _external=True),
+            'username' : self.username,
+            'member_since' : self.member_since,
+            'last_seen' : self.last_seen,
+            'posts' : url_for('api.get_user_posts', id=self.id, _external=True),
+            'followed_posts' : url_for('api.get_user_followed_posts',
+                                        id=self.id, _external=True),
+            'post_count' : self.posts.count()
         }
         return json_user
 
+
     def generate_auth_token(self, expiration):
         s = Serializer(current_app.config['SECRET_KEY'],
-                       expires_in=expiration)
+                        expires_in=expiration)
         return s.dumps({'id': self.id}).decode('ascii')
 
     @staticmethod
     def verify_auth_token(token):
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
-            data = s.loads(token)
+            data = s.load(token)
         except:
             return None
         return User.query.get(data['id'])
+
 
     def __repr__(self):
         return '<User %r>' % self.username
@@ -318,27 +322,26 @@ class Post(db.Model):
             markdown(value, output_format='html'),
             tags=allowed_tags, strip=True))
 
+    #Convert a post to a JSON serializable dictionary
     def to_json(self):
         json_post = {
-            'url': url_for('api.get_post', id=self.id, _external=True),
-            'body': self.body,
-            'body_html': self.body_html,
-            'timestamp': self.timestamp,
-            'author': url_for('api.get_user', id=self.author_id,
-                              _external=True),
-            'comments': url_for('api.get_post_comments', id=self.id,
-                                _external=True),
-            'comment_count': self.comments.count()
+            'url' : url_for('api.get_post', id=self.id, _external=True),
+            'body' : self.body,
+            'body_html' : self.body_html,
+            'timestamp' : self.timestamp,
+            'author' : url_for('api.get_user', id=self.author_id, _external=True),
+            'comments' : url_for('api.get_post_comments', id=self.id, _external=True),
+            'comment_count' : self.comments.count()
         }
         return json_post
 
+    #Create a blog post from JSON
     @staticmethod
     def from_json(json_post):
         body = json_post.get('body')
-        if body is None or body == '':
+        if body is None or body == '' :
             raise ValidationError('post does not have a body')
         return Post(body=body)
-
 
 db.event.listen(Post.body, 'set', Post.on_changed_body)
 
@@ -349,17 +352,9 @@ class Comment(db.Model):
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    disabled = db.Column(db.Boolean)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
-
-    @staticmethod
-    def on_changed_body(target, value, oldvalue, initiator):
-        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'code', 'em', 'i',
-                        'strong']
-        target.body_html = bleach.linkify(bleach.clean(
-            markdown(value, output_format='html'),
-            tags=allowed_tags, strip=True))
+    disabled = db.Column(db.Boolean)
 
     def to_json(self):
         json_comment = {
@@ -369,7 +364,7 @@ class Comment(db.Model):
             'body_html': self.body_html,
             'timestamp': self.timestamp,
             'author': url_for('api.get_user', id=self.author_id,
-                              _external=True),
+                                _external=True)
         }
         return json_comment
 
@@ -380,5 +375,13 @@ class Comment(db.Model):
             raise ValidationError('comment does not have a body')
         return Comment(body=body)
 
+    @staticmethod
+    def on_changed_body(target, value, oldvalue, initiator):
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'code','em', 
+                        'i', 'strong']
+        target.body_html = bleach.linkify(bleach.clean(
+            markdown(value, output_format='html'),
+            tags=allowed_tags, strip=True))
 
 db.event.listen(Comment.body, 'set', Comment.on_changed_body)
+
