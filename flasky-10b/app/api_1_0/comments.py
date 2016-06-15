@@ -30,7 +30,7 @@ def get_comments():
 @api.route('/comments/<int:id>')
 def get_comment(id):
 	comment = Comment.query.get_or_404(id)
-	return jsonify(comment.to_json)
+	return jsonify(comment.to_json())
 
 
 @api.route('/posts/<int:id>/comments/')
@@ -55,7 +55,7 @@ def get_post_comments(id):
 		})
 
 
-@api.route('/posts/<int:id>/comments', methods=['POST'])
+@api.route('/posts/<int:id>/comments/', methods=['POST'])
 @permission_required(Permission.COMMENT)
 def new_post_comment(id):
 	post = Post.query.get_or_404(id)
@@ -64,7 +64,7 @@ def new_post_comment(id):
 	comment.post = post
 	db.session.add(comment)
 	db.session.commit()
-	return jsonify(post.to_json()), 201, \
-			{'Location' : url_for('api.get_post', id=comment.id, _external=True)}
+	return jsonify(comment.to_json()), 201, \
+			{'Location' : url_for('api.get_comment', id=comment.id, _external=True)}
 
 
