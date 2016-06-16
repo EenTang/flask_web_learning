@@ -26,7 +26,7 @@ class APITestCase(unittest.TestCase):
     #helper method that returns the common headers that need to be sent with all requests
     def get_api_headers(self, username, password):
         return {
-            'Authorization' : 'Basic' + b64encode(
+            'Authorization' : 'Basic ' + b64encode(
                     (username + ':' + password).encode('utf-8')).decode('utf-8'),
                 'Accept' : 'application/json',
                 'Content-Type' : 'application/json'
@@ -146,6 +146,7 @@ class APITestCase(unittest.TestCase):
         self.assertTrue(json_response['body'] == 'body of the *blog* post')
         self.assertTrue(json_response['body_html'] == 
                         '<p>body of the <em>blog</em> post</p>')
+        json_post = json_response
 
         # get the post from the user
         response = self.client.get(
@@ -189,7 +190,7 @@ class APITestCase(unittest.TestCase):
         db.session.add_all([u1, u2])
         db.session.commit()
 
-        # get user
+        # get users
         response = self.client.get(
             url_for('api.get_user', id=u1.id),
             headers=self.get_api_headers('susan@example.com','dog'))
@@ -244,25 +245,25 @@ class APITestCase(unittest.TestCase):
                         'Good [post](http://example.com)!')
 
         # add another comment
-        comment = Comment(body='Thank you', author=u1, post=post)
+        comment = Comment(body='Thank you!', author=u1, post=post)
         db.session.add(comment)
         db.session.commit()
 
         # get the two comments from the post
         response = self.client.get(
-            url_for('api.get_post_comment'),
+            url_for('api.get_post_comments', id=post.id),
             headers=self.get_api_headers('susan@example.com', 'dog'))
         self.assertTrue(response.status_code == 200)
-        john_response = json.loads(response.data.decode('utf-8'))
+        json_response = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(json_response.get('comments'))
         self.assertTrue(json_response.get('count', 0) == 2)
 
         # get all the comments
         response = self.client.get(
-            url_for('api.get_comments'),
+            url_for('api.get_comments', id=post.id),
             headers=self.get_api_headers('susan@example.com', 'dog'))
         self.assertTrue(response.status_code == 200)
-        john_response = json.loads(response.data.decode('utf-8'))
+        json_response = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(json_response.get('comments'))
         self.assertTrue(json_response.get('count', 0) == 2)
 

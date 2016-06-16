@@ -264,7 +264,7 @@ class User(UserMixin, db.Model):
     def verify_auth_token(token):
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
-            data = s.load(token)
+            data = s.loads(token)
         except:
             return None
         return User.query.get(data['id'])
@@ -339,7 +339,7 @@ class Post(db.Model):
     @staticmethod
     def from_json(json_post):
         body = json_post.get('body')
-        if body is None or body == '' :
+        if body is None or body == '':
             raise ValidationError('post does not have a body')
         return Post(body=body)
 
