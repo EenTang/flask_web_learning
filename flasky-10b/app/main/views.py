@@ -8,6 +8,18 @@ from ..models import Permission, Role, User, Post, Comment
 from ..decorators import admin_required, permission_required
 
 
+
+#Server shutdown route
+@main.route('/shutdown')
+def setver_shutdown():
+    if not current_app.testing:
+        abort(404)
+    shutdown = request.environ.get('werkzeug.server.shutdown')
+    if not shutdown:
+        abort(500)
+    shutdown()
+    return 'Shutting down...'
+
 @main.route('/', methods=['GET', 'POST'])
 def index():
     form = PostForm()
@@ -239,3 +251,4 @@ def moderate_disable(id):
     comment.disabled = True
     db.session.add(comment)
     return redirect(url_for('.moderate',page=request.args.get('page', 1, type=int)))
+
