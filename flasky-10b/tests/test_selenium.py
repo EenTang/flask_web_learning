@@ -39,7 +39,7 @@ class SeleniumTestCase(unittest.TestCase):
 			User.generate_fake(10)
 			Post.generate_fake(10)
 
-			# add an administrator User
+			# add an administrator user
 			admin_role = Role.query.filter_by(permission=0xff).first()
 			admin = User(email='john@example.com', 
 						username='john', password='cat',
@@ -51,7 +51,7 @@ class SeleniumTestCase(unittest.TestCase):
 			threading.Tread(target=cls.app.run).start()
 
 			# give the server a second to ensure it is up
-			time.sleep(1)
+			time.sleep(5)
 
 
 	@classmethod
