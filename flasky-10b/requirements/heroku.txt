@@ -1,0 +1,2 @@
+-r requirements/prod.txt
+gunicorn==19.6.0
